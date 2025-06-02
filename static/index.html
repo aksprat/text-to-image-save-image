@@ -1,1 +1,385 @@
 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Text to Image Generator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            resize: vertical;
+            min-height: 120px;
+            transition: border-color 0.3s ease;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            flex: 1;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .btn-secondary:hover {
+            box-shadow: 0 10px 20px rgba(240, 147, 251, 0.3);
+        }
+
+        .image-container {
+            text-align: center;
+            margin-top: 30px;
+            display: none;
+        }
+
+        .generated-image {
+            max-width: 100%;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 20px;
+        }
+
+        .download-group {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .download-btn {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .download-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(17, 153, 142, 0.3);
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .message {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            display: none;
+        }
+
+        .message.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .message.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .url-display {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 10px;
+            margin: 10px 0;
+            word-break: break-all;
+            font-family: monospace;
+            font-size: 12px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+                margin: 10px;
+            }
+            
+            .button-group {
+                flex-direction: column;
+            }
+            
+            .download-group {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎨 AI Image Generator</h1>
+        
+        <div class="input-group">
+            <textarea 
+                id="prompt" 
+                placeholder="Describe the image you want to generate... (e.g., 'A serene mountain landscape at sunset with a crystal clear lake reflecting the orange sky')"
+            ></textarea>
+        </div>
+
+        <div class="button-group">
+            <button class="btn" id="generateBtn">🎨 Generate Image</button>
+            <button class="btn btn-secondary" id="uploadBtn" disabled>☁️ Save to Cloud</button>
+        </div>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p id="loadingText">Generating your amazing image...</p>
+        </div>
+
+        <div class="message" id="message"></div>
+
+        <div class="image-container" id="imageContainer">
+            <img class="generated-image" id="generatedImage" alt="Generated Image">
+            <div class="download-group">
+                <a class="download-btn" id="downloadBtn" download="generated-image.png">📥 Download Image</a>
+            </div>
+            <div class="url-display" id="urlDisplay" style="display: none;"></div>
+        </div>
+    </div>
+
+    <script>
+        let currentImageBlob = null;
+        let currentPrompt = '';
+
+        const promptInput = document.getElementById('prompt');
+        const generateBtn = document.getElementById('generateBtn');
+        const uploadBtn = document.getElementById('uploadBtn');
+        const loading = document.getElementById('loading');
+        const loadingText = document.getElementById('loadingText');
+        const message = document.getElementById('message');
+        const imageContainer = document.getElementById('imageContainer');
+        const generatedImage = document.getElementById('generatedImage');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const urlDisplay = document.getElementById('urlDisplay');
+
+        function showMessage(text, type = 'success') {
+            message.textContent = text;
+            message.className = `message ${type}`;
+            message.style.display = 'block';
+            setTimeout(() => {
+                message.style.display = 'none';
+            }, 5000);
+        }
+
+        function showLoading(text) {
+            loadingText.textContent = text;
+            loading.style.display = 'block';
+            generateBtn.disabled = true;
+            uploadBtn.disabled = true;
+        }
+
+        function hideLoading() {
+            loading.style.display = 'none';
+            generateBtn.disabled = false;
+            if (currentImageBlob) {
+                uploadBtn.disabled = false;
+            }
+        }
+
+        generateBtn.addEventListener('click', async () => {
+            const prompt = promptInput.value.trim();
+            if (!prompt) {
+                showMessage('Please enter a prompt to generate an image.', 'error');
+                return;
+            }
+
+            currentPrompt = prompt;
+            showLoading('Generating your amazing image...');
+            imageContainer.style.display = 'none';
+            urlDisplay.style.display = 'none';
+
+            try {
+                const response = await fetch('/generate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ prompt })
+                });
+
+                if (response.ok) {
+                    const blob = await response.blob();
+                    currentImageBlob = blob;
+                    
+                    const imageUrl = URL.createObjectURL(blob);
+                    generatedImage.src = imageUrl;
+                    downloadBtn.href = imageUrl;
+                    downloadBtn.download = `generated-${Date.now()}.png`;
+                    
+                    imageContainer.style.display = 'block';
+                    uploadBtn.disabled = false;
+                    showMessage('Image generated successfully! 🎉');
+                } else {
+                    const errorData = await response.json();
+                    showMessage(`Error: ${errorData.error}`, 'error');
+                }
+            } catch (error) {
+                showMessage(`Error: ${error.message}`, 'error');
+            } finally {
+                hideLoading();
+            }
+        });
+
+        uploadBtn.addEventListener('click', async () => {
+            if (!currentPrompt) {
+                showMessage('Please generate an image first.', 'error');
+                return;
+            }
+
+            showLoading('Uploading to DigitalOcean Spaces...');
+
+            try {
+                const response = await fetch('/upload-to-spaces', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ prompt: currentPrompt })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    showMessage('Image uploaded successfully to DigitalOcean Spaces! 🎉');
+                    urlDisplay.innerHTML = `
+                        <strong>Public URL:</strong><br>
+                        <a href="${data.url}" target="_blank">${data.url}</a>
+                    `;
+                    urlDisplay.style.display = 'block';
+                } else {
+                    showMessage(`Upload failed: ${data.error}`, 'error');
+                }
+            } catch (error) {
+                showMessage(`Upload error: ${error.message}`, 'error');
+            } finally {
+                hideLoading();
+            }
+        });
+
+        // Enable Enter key to generate
+        promptInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && e.ctrlKey) {
+                generateBtn.click();
+            }
+        });
+
+        // Add some example prompts
+        const examples = [
+            "A majestic dragon flying over a medieval castle at sunset",
+            "A cyberpunk cityscape with neon lights reflecting on wet streets",
+            "A peaceful zen garden with cherry blossoms and a traditional tea house",
+            "An astronaut floating in space with Earth visible in the background",
+            "A magical forest with glowing mushrooms and fairy lights"
+        ];
+
+        // Add placeholder cycling
+        let exampleIndex = 0;
+        setInterval(() => {
+            if (promptInput === document.activeElement) return; // Don't change if user is typing
+            promptInput.placeholder = `Try: "${examples[exampleIndex]}" or describe your own image...`;
+            exampleIndex = (exampleIndex + 1) % examples.length;
+        }, 4000);
+    </script>
+</body>
+</html>
