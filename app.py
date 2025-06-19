@@ -9,7 +9,7 @@ import os
 
 app = Flask(__name__, static_folder="static", template_folder="static")
 
-HF_API_URL = "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0"
+HF_API_URL = "https://router.huggingface.co/replicate/v1/predictions"
 HF_API_KEY = f"Bearer {os.getenv('HF_TOKEN')}"
 # HF_API_URL = "https://router.huggingface.co/hf-inference/models/stabilityai/stable-diffusion-xl-base-1.0"
 
